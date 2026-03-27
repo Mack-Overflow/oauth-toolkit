@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  body {
+    @apply bg-smoke-950 font-sans text-smoke-200 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-smoke-700/50 hover:bg-smoke-600/50;
+  }
+
+  ::selection {
+    @apply bg-cyan-500/25 text-cyan-100;
+  }
+}
+
+@layer components {
+  .card {
+    @apply relative rounded-xl border border-smoke-800/80 bg-smoke-900/80 p-5 shadow-inner-glow backdrop-blur-sm transition-all duration-200;
+  }
+
+  .card:hover {
+    @apply border-smoke-700/60;
+  }
+
+  .input-field {
+    @apply w-full rounded-lg border border-smoke-700/60 bg-smoke-850 px-3 py-2 font-mono text-sm text-smoke-200 placeholder-smoke-500 transition-all duration-200 focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/20;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-lg bg-cyan-600/90 px-4 py-2 text-sm font-semibold text-white shadow-glow-sm transition-all duration-200 hover:bg-cyan-500 hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none disabled:hover:bg-cyan-600/90;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 rounded-lg border border-smoke-700/60 bg-smoke-800/50 px-4 py-2 text-sm font-medium text-smoke-300 transition-all duration-200 hover:border-smoke-600 hover:bg-smoke-800 hover:text-smoke-100;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center gap-2 rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-semibold text-red-400 transition-all duration-200 hover:bg-red-500/25 hover:text-red-300;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider;
+  }
+
+  .section-label {
+    @apply mb-1 block text-[0.7rem] font-semibold uppercase tracking-wider text-smoke-400;
+  }
+
+  .pre-block {
+    @apply overflow-x-auto rounded-lg border border-smoke-800/80 bg-smoke-925 p-4 font-mono text-xs leading-relaxed text-smoke-300;
+  }
+}

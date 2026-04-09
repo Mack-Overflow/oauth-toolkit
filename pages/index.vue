@@ -16,7 +16,7 @@ const { resetFlow } = useOAuthStore()
             </svg>
           </div>
           <div>
-            <h1 class="text-xl font-bold text-smoke-100">SSO Toolkit</h1>
+            <h1 class="text-xl font-bold text-smoke-100">0Tool</h1>
             <p class="text-xs text-smoke-500">OAuth 2.0 / OIDC Inspector</p>
           </div>
         </div>
@@ -36,9 +36,15 @@ const { resetFlow } = useOAuthStore()
           <AuthFlow />
           <TokenValidator />
           <UserRetrieval />
+          <!-- Ad: below user info -->
+          <AdUnit ad-slot="YOUR_AD_SLOT_1" ad-format="auto" />
         </div>
-        <div class="lg:sticky lg:top-4 lg:col-span-5">
-          <ResultLog />
+        <div class="flex flex-col gap-5 lg:col-span-5">
+          <div class="lg:sticky lg:top-4">
+            <ResultLog />
+          </div>
+          <!-- Ad: right sidebar -->
+          <AdUnit ad-slot="YOUR_AD_SLOT_2" ad-format="auto" />
         </div>
       </div>
     </div>

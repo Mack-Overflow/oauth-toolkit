@@ -1,6 +1,11 @@
 <script setup lang="ts">
-const { state, addLog } = useOAuthStore()
+const { state, endpoints, addLog } = useOAuthStore()
 const loading = ref(false)
+
+const hasIntrospectionEndpoint = computed(() => {
+  const ep = endpoints.value as Record<string, unknown> | null
+  return !!ep?.introspection_endpoint
+})
 
 const tokenToValidate = computed(() => {
 	if (!state.value.tokenResponse) return ''
@@ -38,6 +43,11 @@ async function validate() {
       <h2 class="text-sm font-semibold text-smoke-100">Token Inspector</h2>
     </div>
 
+    <div v-if="!hasIntrospectionEndpoint" class="text-[0.7rem] text-smoke-500">
+      No <code class="text-smoke-400">introspection_endpoint</code> found in endpoint configuration.
+    </div>
+
+    <template v-else>
     <button
       :disabled="!tokenToValidate || loading"
       class="btn-primary"
@@ -67,5 +77,6 @@ async function validate() {
       </div>
       <pre class="pre-block">{{ JSON.stringify(state.validationResult, null, 2) }}</pre>
     </div>
+    </template>
   </div>
 </template>

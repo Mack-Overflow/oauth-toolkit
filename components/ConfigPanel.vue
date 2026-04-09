@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { state, endpoints, addLog, applyManualJson } = useOAuthStore()
+const { state, endpoints, defaultCallbackUrl, addLog, applyManualJson } = useOAuthStore()
 
 const showSecret = ref(false)
 const jsonError = ref<string | null>(null)
@@ -143,6 +143,9 @@ function onSwitchMode(mode: 'auto' | 'manual') {
             type="url"
             class="input-field"
           />
+          <p class="mt-1 text-[0.65rem] leading-relaxed text-smoke-600">
+            The default <code class="text-smoke-400">{{ defaultCallbackUrl }}</code> is how this tool captures the authorization code and continues the flow automatically.
+          </p>
         </div>
         <div>
           <label for="scopes" class="section-label">Scopes</label>

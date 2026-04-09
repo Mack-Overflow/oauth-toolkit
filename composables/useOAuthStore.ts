@@ -42,6 +42,12 @@ const KEY_ALIASES: Record<string, string> = {
 	user_info_uri: 'userinfo_endpoint',
 	userinfo_uri: 'userinfo_endpoint',
 	jwks_url: 'jwks_uri',
+	introspection_url: 'introspection_endpoint',
+	introspection_uri: 'introspection_endpoint',
+	introspect_endpoint: 'introspection_endpoint',
+	introspect_url: 'introspection_endpoint',
+	validate_endpoint: 'introspection_endpoint',
+	validate_url: 'introspection_endpoint',
 }
 
 function normalizeEndpoints(raw: Record<string, unknown>): Record<string, unknown> {
@@ -56,28 +62,74 @@ function normalizeEndpoints(raw: Record<string, unknown>): Record<string, unknow
 	return result
 }
 
+const STORAGE_KEY = 'oauth-toolkit-state'
+
+function loadPersistedState(): Partial<OAuthState> | null {
+	if (import.meta.server) return null
+	try {
+		const raw = sessionStorage.getItem(STORAGE_KEY)
+		if (raw) return JSON.parse(raw)
+	} catch { /* ignore */ }
+	return null
+}
+
+function persistState(s: OAuthState) {
+	if (import.meta.server) return
+	try {
+		// Persist everything except logs (transient) and parsed manualEndpoints (derived)
+		const { logs, manualEndpoints, ...rest } = s
+		sessionStorage.setItem(STORAGE_KEY, JSON.stringify(rest))
+	} catch { /* ignore */ }
+}
+
 export const useOAuthStore = () => {
+	const { oauthCallbackUrl } = useRuntimeConfig().public
+	const defaultCallbackUrl = oauthCallbackUrl as string
+	const saved = loadPersistedState()
+
 	const state = useState<OAuthState>('oauth', () => ({
-		config: {
+		config: saved?.config ?? {
 			discoveryUrl: '',
 			clientId: '',
 			clientSecret: '',
-			redirectUri: 'http://localhost:3030/callback',
+			redirectUri: defaultCallbackUrl,
 			scopes: 'openid profile email',
 		},
-		discoveryMode: 'auto',
+		discoveryMode: saved?.discoveryMode ?? 'auto',
 		manualEndpoints: null,
-		manualEndpointsRaw: '',
-		discoveryResult: null,
-		authorizationCode: null,
-		codeVerifier: null,
-		pkce: true,
-		basicAuth: false,
-		tokenResponse: null,
-		validationResult: null,
-		userInfo: null,
+		manualEndpointsRaw: saved?.manualEndpointsRaw ?? '',
+		discoveryResult: saved?.discoveryResult ?? null,
+		authorizationCode: saved?.authorizationCode ?? null,
+		codeVerifier: saved?.codeVerifier ?? null,
+		pkce: saved?.pkce ?? true,
+		basicAuth: saved?.basicAuth ?? false,
+		tokenResponse: saved?.tokenResponse ?? null,
+		validationResult: saved?.validationResult ?? null,
+		userInfo: saved?.userInfo ?? null,
 		logs: [],
 	}))
+
+	// useState is initialized during SSR where sessionStorage is unavailable.
+	// On client hydration, restore persisted state once.
+	const hydrated = useState('oauth-hydrated', () => false)
+	if (import.meta.client && saved && !hydrated.value) {
+		hydrated.value = true
+		Object.assign(state.value, {
+			config: saved.config ?? state.value.config,
+			discoveryMode: saved.discoveryMode ?? state.value.discoveryMode,
+			manualEndpointsRaw: saved.manualEndpointsRaw ?? state.value.manualEndpointsRaw,
+			discoveryResult: saved.discoveryResult ?? state.value.discoveryResult,
+			authorizationCode: saved.authorizationCode ?? state.value.authorizationCode,
+			codeVerifier: saved.codeVerifier ?? state.value.codeVerifier,
+			pkce: saved.pkce ?? state.value.pkce,
+			basicAuth: saved.basicAuth ?? state.value.basicAuth,
+			tokenResponse: saved.tokenResponse ?? state.value.tokenResponse,
+			validationResult: saved.validationResult ?? state.value.validationResult,
+			userInfo: saved.userInfo ?? state.value.userInfo,
+		})
+	}
+
+	watch(state, (v) => persistState(v), { deep: true })
 
 	const endpoints = computed<Record<string, unknown> | null>(() => {
 		if (state.value.discoveryMode === 'auto') {
@@ -112,12 +164,26 @@ export const useOAuthStore = () => {
 	}
 
 	function resetFlow() {
+		state.value.config = {
+			discoveryUrl: '',
+			clientId: '',
+			clientSecret: '',
+			redirectUri: defaultCallbackUrl,
+			scopes: 'openid profile email',
+		}
+		state.value.discoveryMode = 'auto'
+		state.value.manualEndpoints = null
+		state.value.manualEndpointsRaw = ''
 		state.value.discoveryResult = null
 		state.value.authorizationCode = null
 		state.value.codeVerifier = null
+		state.value.pkce = true
+		state.value.basicAuth = false
 		state.value.tokenResponse = null
 		state.value.validationResult = null
 		state.value.userInfo = null
+		state.value.logs = []
+		try { sessionStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
 	}
 
 	function applyManualJson(json: string): string | null {
@@ -161,6 +227,7 @@ export const useOAuthStore = () => {
 	return {
 		state,
 		endpoints,
+		defaultCallbackUrl,
 		addLog,
 		clearLogs,
 		resetFlow,

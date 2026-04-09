@@ -1,10 +1,15 @@
 <script setup lang="ts">
 const { state, endpoints, addLog } = useOAuthStore()
 const loading = ref(false)
-const activeStep = ref<string | null>('discover')
-
 const isAutoMode = computed(() => state.value.discoveryMode === 'auto')
 const hasEndpoints = computed(() => !!endpoints.value)
+
+const activeStep = ref<string | null>(
+  state.value.tokenResponse ? null
+    : state.value.authorizationCode ? 'token'
+    : hasEndpoints.value ? 'authorize'
+    : 'discover'
+)
 
 async function discover() {
 	activeStep.value = 'discover'
@@ -54,7 +59,7 @@ async function authorize() {
 			nonce: res.nonce,
 			pkce: !!res.codeVerifier,
 		})
-		window.open(res.authorizationUrl, '_blank')
+		window.location.href = res.authorizationUrl
 	} catch (err: any) {
 		addLog('error', 'Authorize', err.data || err.message)
 	} finally {
@@ -137,7 +142,7 @@ async function exchangeToken() {
             class="btn-primary"
             @click="discover"
           >
-            <svg v-if="activeStep === 'discover'" class="h-3.5 w-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+            <svg v-if="activeStep === 'discover' && loading" class="h-3.5 w-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
             Fetch OIDC Config
           </button>
           <div v-if="state.discoveryResult" class="mt-2 flex items-center gap-1.5 text-[0.7rem] font-medium text-emerald-400">
@@ -179,7 +184,7 @@ async function exchangeToken() {
           class="btn-primary"
           @click="authorize"
         >
-          <svg v-if="activeStep === 'authorize'" class="h-3.5 w-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+          <svg v-if="activeStep === 'authorize' && loading" class="h-3.5 w-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
           Open Auth URL
         </button>
       </div>
@@ -215,7 +220,7 @@ async function exchangeToken() {
           class="btn-primary"
           @click="exchangeToken"
         >
-          <svg v-if="activeStep === 'token'" class="h-3.5 w-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+          <svg v-if="activeStep === 'token' && loading" class="h-3.5 w-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
           Exchange Token
         </button>
         <div v-if="state.tokenResponse" class="mt-2 flex items-center gap-1.5 text-[0.7rem] font-medium text-emerald-400">

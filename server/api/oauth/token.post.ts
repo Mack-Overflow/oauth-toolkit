@@ -6,6 +6,8 @@ export default defineEventHandler(async (event) => {
 		code: string
 		redirectUri: string
 		grantType?: string
+		codeVerifier?: string
+		basicAuth?: boolean
 	}>(event)
 
 	if (!body.tokenEndpoint || !body.clientId || !body.code) {
@@ -14,15 +16,32 @@ export default defineEventHandler(async (event) => {
 
 	const params = new URLSearchParams({
 		grant_type: body.grantType || 'authorization_code',
-		client_id: body.clientId,
-		client_secret: body.clientSecret || '',
 		code: body.code,
 		redirect_uri: body.redirectUri || '',
 	})
 
+	// If using basic auth, credentials go in the header, not the body
+	const headers: Record<string, string> = {
+		'Content-Type': 'application/x-www-form-urlencoded',
+	}
+
+	if (body.basicAuth) {
+		const credentials = Buffer.from(`${body.clientId}:${body.clientSecret || ''}`).toString('base64')
+		headers['Authorization'] = `Basic ${credentials}`
+	} else {
+		params.set('client_id', body.clientId)
+		if (body.clientSecret) {
+			params.set('client_secret', body.clientSecret)
+		}
+	}
+
+	if (body.codeVerifier) {
+		params.set('code_verifier', body.codeVerifier)
+	}
+
 	const response = await $fetch<Record<string, unknown>>(body.tokenEndpoint, {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+		headers,
 		body: params.toString(),
 	})
 

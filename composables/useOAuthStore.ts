@@ -13,6 +13,9 @@ interface OAuthState {
 	manualEndpointsRaw: string
 	discoveryResult: Record<string, unknown> | null
 	authorizationCode: string | null
+	codeVerifier: string | null
+	pkce: boolean
+	basicAuth: boolean
 	tokenResponse: Record<string, unknown> | null
 	validationResult: Record<string, unknown> | null
 	userInfo: Record<string, unknown> | null
@@ -67,6 +70,9 @@ export const useOAuthStore = () => {
 		manualEndpointsRaw: '',
 		discoveryResult: null,
 		authorizationCode: null,
+		codeVerifier: null,
+		pkce: true,
+		basicAuth: false,
 		tokenResponse: null,
 		validationResult: null,
 		userInfo: null,
@@ -108,6 +114,7 @@ export const useOAuthStore = () => {
 	function resetFlow() {
 		state.value.discoveryResult = null
 		state.value.authorizationCode = null
+		state.value.codeVerifier = null
 		state.value.tokenResponse = null
 		state.value.validationResult = null
 		state.value.userInfo = null
@@ -132,6 +139,12 @@ export const useOAuthStore = () => {
 			}
 			if (parsed.scopes && !state.value.config.scopes) {
 				state.value.config.scopes = String(parsed.scopes)
+			}
+			if (typeof parsed.pkce === 'boolean') {
+				state.value.pkce = parsed.pkce
+			}
+			if (typeof parsed.basic_auth === 'boolean') {
+				state.value.basicAuth = parsed.basic_auth
 			}
 
 			addLog('info', 'Manual Config', {

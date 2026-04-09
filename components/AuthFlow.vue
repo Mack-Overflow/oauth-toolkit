@@ -36,14 +36,25 @@ async function authorize() {
 			clientId: state.value.config.clientId,
 			redirectUri: state.value.config.redirectUri,
 			scopes: state.value.config.scopes,
+			pkce: state.value.pkce,
+			nonce: true,
 		}
 		addLog('request', 'Authorize', payload)
 		const result = await $fetch('/api/oauth/authorize', {
 			method: 'POST',
 			body: payload,
 		})
-		addLog('response', 'Authorize', result)
-		window.open((result as any).authorizationUrl, '_blank')
+		const res = result as any
+		if (res.codeVerifier) {
+			state.value.codeVerifier = res.codeVerifier
+		}
+		addLog('response', 'Authorize', {
+			authorizationUrl: res.authorizationUrl,
+			state: res.state,
+			nonce: res.nonce,
+			pkce: !!res.codeVerifier,
+		})
+		window.open(res.authorizationUrl, '_blank')
 	} catch (err: any) {
 		addLog('error', 'Authorize', err.data || err.message)
 	} finally {
@@ -58,12 +69,18 @@ async function exchangeToken() {
 	loading.value = true
 	try {
 		const ep = endpoints.value as any
-		const payload = {
+		const payload: Record<string, unknown> = {
 			tokenEndpoint: ep.token_endpoint,
 			clientId: state.value.config.clientId,
 			clientSecret: state.value.config.clientSecret,
 			code: state.value.authorizationCode,
 			redirectUri: state.value.config.redirectUri,
+		}
+		if (state.value.codeVerifier) {
+			payload.codeVerifier = state.value.codeVerifier
+		}
+		if (state.value.basicAuth) {
+			payload.basicAuth = true
 		}
 		addLog('request', 'Token Exchange', payload)
 		const result = await $fetch('/api/oauth/token', {
